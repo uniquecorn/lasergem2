@@ -7,7 +7,7 @@ public class UnitDisplay : MonoBehaviour
 {
 	public RectTransform displayTransform;
 	public Unit unit;
-	public InputField health,damage,movement,range;
+	public InputField health,damage,movement,minrange,maxrange;
 
 	public bool visible;
 
@@ -22,7 +22,8 @@ public class UnitDisplay : MonoBehaviour
 		health.text = unit.health.ToString();
 		damage.text = unit.damage.ToString();
 		movement.text = unit.movementRange.ToString();
-		range.text = unit.attackMaxRange.ToString();
+		maxrange.text = unit.attackMaxRange.ToString();
+		minrange.text = unit.attackMinRange.ToString();
 		visible = true;
 	}
 
@@ -44,6 +45,10 @@ public class UnitDisplay : MonoBehaviour
 	{
 		unit.attackMaxRange = int.Parse(value);
 	}
+	public void SetMinRange(string value)
+	{
+		unit.attackMinRange = int.Parse(value);
+	}
 
 	// Update is called once per frame
 	void Update ()
@@ -54,7 +59,7 @@ public class UnitDisplay : MonoBehaviour
 		}
 		else
 		{
-			displayTransform.anchoredPosition = Vector2.Lerp(displayTransform.anchoredPosition, Vector2.down * 100, Time.deltaTime * 5);
+			displayTransform.anchoredPosition = Vector2.Lerp(displayTransform.anchoredPosition, Vector2.down * 150, Time.deltaTime * 5);
 		}
 	}
 }

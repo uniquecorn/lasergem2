@@ -35,7 +35,6 @@ public class GameManager : MonoBehaviour
 	public static GameManager instance;
 	// SINGLETONS
 	public CameraManager cameraManager;
-	public PathDisplay pathDisplay;
 	public UnitDisplay unitDisplay;
 
 	public Text widthHandle, heightHandle, unitHandle;

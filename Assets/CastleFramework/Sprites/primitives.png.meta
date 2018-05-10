@@ -12,6 +12,7 @@ TextureImporter:
     21300010: primitives_5
     21300012: primitives_6
     21300014: primitives_7
+    21300016: primitives_8
   externalObjects: {}
   serializedVersion: 4
   mipmaps:
@@ -206,6 +207,20 @@ TextureImporter:
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: primitives_8
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 256
+        width: 128
+        height: 128
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 32, y: 32, z: 32, w: 32}
       outline: []
       physicsShape: []
       tessellationDetail: 0

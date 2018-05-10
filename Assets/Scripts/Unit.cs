@@ -7,6 +7,7 @@ using Sigtrap.Relays;
 public class Unit : MonoBehaviour
 {
 	public SpriteRenderer sr;
+	public Tile prevTile;
 	public Tile tile;
 	[HideInInspector]
 	public int health;
@@ -24,6 +25,9 @@ public class Unit : MonoBehaviour
 	private Tile moveTile;
 
 	public GameObject attackReticule;
+	public SpriteRenderer selector;
+	public PathDisplay pathDisplay;
+
 	public Unit attackTarget;
 
 	public int player;
@@ -53,11 +57,31 @@ public class Unit : MonoBehaviour
 	{
 		health = maxHealth;
 		sr.color = GameManager.instance.players[player].unitColor;
+		if (GameManager.instance.currentPlayer == player)
+		{
+			selector.gameObject.SetActive(true);
+			selector.color = Color.grey;
+		}
+		else
+		{
+			selector.gameObject.SetActive(false);
+		}
 	}
 
 	public void OnTurnStart()
 	{
+		if (GameManager.instance.currentPlayer == player)
+		{
+			selector.gameObject.SetActive(true);
+			selector.color = Color.grey;
+		}
+		else
+		{
+			selector.gameObject.SetActive(false);
+		}
+		pathDisplay.hidden = true;
 		movementUsed = 0;
+		prevTile = tile;
 		Attack();
 	}
 
@@ -65,7 +89,12 @@ public class Unit : MonoBehaviour
 	{
 		if(GameManager.instance.currentPlayer == player)
 		{
-			if(movementRange - movementUsed > 1)
+			if(GameManager.instance.selectedUnit != null)
+			{
+				GameManager.instance.selectedUnit.Unselect();
+			}
+			
+			if (movementRange - movementUsed > 1)
 			{
 				moveTile = tile;
 				GetMovementTiles();
@@ -74,14 +103,20 @@ public class Unit : MonoBehaviour
 				GameManager.instance.selectedUnit = this;
 				GameManager.instance.state = GameManager.GameState.MOVE;
 				GetAttackTiles(moveTile);
+				selector.color = GameManager.instance.players[player].unitColor;
 			}
 		}
+	}
+	public void Undo()
+	{
+
 	}
 
 	public void Unselect()
 	{
 		GameManager.instance.selectedUnit = null;
 		GameManager.instance.state = GameManager.GameState.IDLE;
+		selector.color = Color.grey;
 		moving = false;
 	}
 
@@ -133,7 +168,7 @@ public class Unit : MonoBehaviour
 	public void Move(Tile destination)
 	{
 		SetTile(destination);
-		GameManager.instance.pathDisplay.hidden = true;
+		
 		Unselect();
 		
 		if (attackTarget)
@@ -218,10 +253,15 @@ public class Unit : MonoBehaviour
 				pathfinding.Create(tile, moveTile);
 			}
 			
-			GameManager.instance.pathDisplay.Display(pathfinding);
+			pathDisplay.Display(pathfinding);
+			pathDisplay.line.startColor = pathDisplay.line.endColor = GameManager.instance.players[player].unitColor;
 			if (CastleManager.selectedObject && CastleManager.selectedObject is Tile)
 			{
-				if (CheckRange((Tile)CastleManager.selectedObject))
+				if(CastleManager.selectedObject == tile)
+				{
+					Unselect();
+				}
+				else if (CheckRange((Tile)CastleManager.selectedObject))
 				{
 					Move(moveTile);
 					movementUsed += pathfinding.path[pathfinding.path.Count - 1].index;
