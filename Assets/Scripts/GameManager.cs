@@ -41,6 +41,8 @@ public class GameManager : MonoBehaviour
 	public CanvasGroup initMap;
 	public CanvasGroup gameUI;
 
+	public Sprite[] unitSprites;
+
 	public Relay endTurn;
 
 	private void Awake()
@@ -87,6 +89,12 @@ public class GameManager : MonoBehaviour
 		state = GameState.IDLE;
 		CreateMap(MAP_WIDTH, MAP_HEIGHT);
 		cameraManager.Snap((float)(MAP_WIDTH - 1) / 2, (float)(MAP_HEIGHT - 1) / 2);
+	}
+
+	public void Undo()
+	{
+		if(selectedUnit)
+		selectedUnit.Undo();
 	}
 
 	public void CreateMap(int width, int height)

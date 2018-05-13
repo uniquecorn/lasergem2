@@ -7,12 +7,17 @@ public class UnitDisplay : MonoBehaviour
 {
 	public RectTransform displayTransform;
 	public Unit unit;
+	public Image icon;
+	public Image border;
 	public InputField health,damage,movement,minrange,maxrange;
+
+	public Sprite[] unitSprites;
 
 	public bool visible;
 
 	// Use this for initialization
-	void Start () {
+	void Start ()
+	{
 		
 	}
 
@@ -24,7 +29,20 @@ public class UnitDisplay : MonoBehaviour
 		movement.text = unit.movementRange.ToString();
 		maxrange.text = unit.attackMaxRange.ToString();
 		minrange.text = unit.attackMinRange.ToString();
+		icon.sprite = unit.sr.sprite;
+		border.color = GameManager.instance.players[unit.player].unitColor;
 		visible = true;
+	}
+
+	public void SwapSprite()
+	{
+		int index = unit.spriteIndex + 1;
+		if(index >= GameManager.instance.unitSprites.Length)
+		{
+			index = 0;
+		}
+		unit.spriteIndex = index;
+		unit.sr.sprite = icon.sprite = GameManager.instance.unitSprites[index];
 	}
 
 	public void SetHealth(string value)

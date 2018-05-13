@@ -15,13 +15,15 @@ public class Unit : MonoBehaviour
 	public int movementRange, attackMaxRange, attackMinRange;
 	public int movementUsed;
 
+	public int spriteIndex;
+
 	public int damage;
 
 	public bool moving;
 	public Pathfinding pathfinding;
 	public Pathfinding rPathfinding;
 	private Tile[] moveRangeTiles;
-	private Tile[] attackRangeTiles;
+	private List<Tile> attackRangeTiles;
 	private Tile moveTile;
 
 	public GameObject attackReticule;
@@ -56,6 +58,7 @@ public class Unit : MonoBehaviour
 	void ResetUnit()
 	{
 		health = maxHealth;
+		prevTile = tile;
 		sr.color = GameManager.instance.players[player].unitColor;
 		if (GameManager.instance.currentPlayer == player)
 		{
@@ -93,31 +96,33 @@ public class Unit : MonoBehaviour
 			{
 				GameManager.instance.selectedUnit.Unselect();
 			}
-			
+			GameManager.instance.selectedUnit = this;
+			GameManager.instance.unitDisplay.LoadUnit(this);
+			selector.color = GameManager.instance.players[player].unitColor;
 			if (movementRange - movementUsed > 1)
 			{
 				moveTile = tile;
 				GetMovementTiles();
 				moving = true;
-				GameManager.instance.unitDisplay.LoadUnit(this);
-				GameManager.instance.selectedUnit = this;
 				GameManager.instance.state = GameManager.GameState.MOVE;
 				GetAttackTiles(moveTile);
-				selector.color = GameManager.instance.players[player].unitColor;
+				
 			}
 		}
 	}
 	public void Undo()
 	{
-
+		SetTile(prevTile);
+		movementUsed = 0;
+		attackTarget = null;
+		pathDisplay.hidden = true;
 	}
 
 	public void Unselect()
 	{
 		GameManager.instance.selectedUnit = null;
-		GameManager.instance.state = GameManager.GameState.IDLE;
+		
 		selector.color = Color.grey;
-		moving = false;
 	}
 
 	void Attack()
@@ -157,20 +162,37 @@ public class Unit : MonoBehaviour
 		{
 			rPathfinding.CreateRangedMap(_tile, attackMaxRange);
 		}
-		attackRangeTiles = new Tile[rPathfinding.path.Count];
+		if(attackRangeTiles == null)
+		{
+			attackRangeTiles = new List<Tile>();
+		}
+		else
+		{
+			attackRangeTiles.Clear();
+		}
 		for (int i = 0; i < rPathfinding.path.Count; i++)
 		{
-			attackRangeTiles[i] = GameManager.instance.GetTile(rPathfinding.path[i]);
+			attackRangeTiles.Add(GameManager.instance.GetTile(rPathfinding.path[i]));
 		}
-		// SUBTRACT MIN RANGE NEXT TIME
+		rPathfinding.CreateRangedMap(_tile, attackMinRange);
+		for (int i = 0; i < attackRangeTiles.Count; i++)
+		{
+			for(int j = 0; j < rPathfinding.path.Count; j++)
+			{
+				if(attackRangeTiles[i] == GameManager.instance.GetTile(rPathfinding.path[j]))
+				{
+					attackRangeTiles.RemoveAt(i);
+				}
+			}
+		}
 	}
 
 	public void Move(Tile destination)
 	{
 		SetTile(destination);
-		
-		Unselect();
-		
+		GameManager.instance.state = GameManager.GameState.IDLE;
+		//Unselect();
+		moving = false;
 		if (attackTarget)
 		{
 			attackReticule.transform.position = attackTarget.transform.position;
@@ -213,7 +235,7 @@ public class Unit : MonoBehaviour
 			}
 		}
 		bool foundGuy = false;
-		for (int i = 0; i < attackRangeTiles.Length; i++)
+		for (int i = 0; i < attackRangeTiles.Count; i++)
 		{
 			if(attackRangeTiles[i].occupant != null)
 			{
