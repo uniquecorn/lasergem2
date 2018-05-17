@@ -6,26 +6,31 @@ using Castle;
 public class Tile : CastleObject
 {
 	public SpriteRenderer sr;
+	public SpriteRenderer secondSr;
 	public int x, y;
-	public Unit occupant;
+	public TileObject occupant;
 	public bool blocked;
 
 	private bool highlighted;
+	private bool highlightedSecond;
 
 	public override void Tap()
 	{
-		GameManager.instance.cameraManager.Focus(this);
 		base.Tap();
 		if(GameManager.instance.state == GameManager.GameState.IDLE)
 		{
 			if (occupant)
 			{
+				GameManager.instance.cameraManager.Focus(this);
 				occupant.Select();
 			}
-		}
-		else if(GameManager.instance.state == GameManager.GameState.MOVE)
-		{
-
+			else
+			{
+				if (GameManager.instance.selectedObject != null)
+				{
+					GameManager.instance.selectedObject.Unselect();
+				}
+			}
 		}
 	}
 
@@ -33,6 +38,11 @@ public class Tile : CastleObject
 	{
 		sr.color = _color;
 		highlighted = true;
+	}
+	public void HighlightSecondary(Color _color)
+	{
+		secondSr.color = _color;
+		highlightedSecond = true;
 	}
 	// Update is called once per frame
 	void LateUpdate ()
@@ -44,6 +54,14 @@ public class Tile : CastleObject
 		else
 		{
 			sr.color = Color.Lerp(sr.color, Color.white, Time.deltaTime * 10);
+		}
+		if (highlightedSecond)
+		{
+			highlightedSecond = false;
+		}
+		else
+		{
+			secondSr.color = Color.Lerp(secondSr.color, Color.clear, Time.deltaTime * 10);
 		}
 	}
 }

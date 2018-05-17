@@ -67,11 +67,11 @@ public class Pathfinding
 	/// <param name="start">Start tile</param>
 	/// <param name="range">Range of tiles</param>
 	/// <returns></returns>
-	public static Pathfinding GetRange(Tile start,int range)
+	public static Pathfinding GetRange(Tile start,int range, bool ignoreBlock = false)
 	{
 		Pathfinding newPath = new Pathfinding();
 
-		newPath.CreateRangedMap(start,range);
+		newPath.CreateRangedMap(start,range,ignoreBlock);
 		return newPath;
 	}
 
@@ -131,7 +131,7 @@ public class Pathfinding
 	/// </summary>
 	/// <param name="start">First tile</param>
 	/// <param name="range">Range</param>
-	public void CreateRangedMap(Tile start, int range = 2)
+	public void CreateRangedMap(Tile start, int range = 2, bool ignoreBlock = false)
 	{
 		if (start == null)
 		{
@@ -139,7 +139,7 @@ public class Pathfinding
 		}
 
 		pathNodes = (PathNode[,])nodeMap.Clone();
-		GenerateNodeMap();
+		GenerateNodeMap(ignoreBlock);
 
 		pathNodes[start.x, start.y].index = 0;
 
@@ -494,22 +494,23 @@ public class Pathfinding
 	/// <summary>
 	/// Generates the nodemap.
 	/// </summary>
-	void GenerateNodeMap()
+	void GenerateNodeMap(bool ignoreBlock = false)
 	{
 		for (int i = 0; i < GameManager.MAP_WIDTH; i++)
 		{
 			for (int j = 0; j < GameManager.MAP_HEIGHT; j++)
 			{
-				//Tile tempTile = GameManager.instance.GetTile(i, j);
-				//if(tempTile.terrain == Tile.Terrain.MOUNTAINS || tempTile.occupation != Tile.Occupation.NONE)
-				//{
-				//	pathNodes[i, j].blocked = true;
-				//	pathNodes[i, j].index = 9999;
-				//}
-				//else
-				//{
+				Tile tempTile = GameManager.instance.GetTile(i, j);
+				
+				if(tempTile.occupant && !ignoreBlock)
+				{
+					pathNodes[i, j].blocked = true;
+					pathNodes[i, j].index = 9999;
+				}
+				else
+				{
 					pathNodes[i, j].index = -1;
-				//}
+				}
 			}
 		}
 	}

@@ -3,6 +3,7 @@
 	using System.Collections;
 	using System.Collections.Generic;
 	using UnityEngine;
+	using UnityEngine.EventSystems;
 
 	public static class CastleManager
 	{
@@ -87,6 +88,11 @@
 			colliderBuffer = Physics2D.OverlapPointAll(tapPosition);
 			focusedObject = IsolateObject(colliderBuffer);
 
+			if (EventSystem.current.IsPointerOverGameObject(-1))    // is the touch on the GUI
+			{
+				Debug.Log("BLOCK");
+				return;
+			}
 			Hover(focusedObject);
 			Select(focusedObject);
 		}
@@ -220,6 +226,7 @@
 			{
 				return;
 			}
+			
 			if (_override)
 			{
 				if (selectedObject)

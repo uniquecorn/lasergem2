@@ -21,8 +21,7 @@ public class GameManager : MonoBehaviour
 	{
 		UNINIT,
 		IDLE,
-		MOVE,
-		ATTACK
+		DISABLESELECTING
 	}
 	public GameState state;
 
@@ -30,7 +29,7 @@ public class GameManager : MonoBehaviour
 	public int currentPlayer;
 	public Text turnDisplay;
 
-	public Unit selectedUnit;
+	public TileObject selectedObject;
 
 	public static GameManager instance;
 	// SINGLETONS
@@ -86,6 +85,7 @@ public class GameManager : MonoBehaviour
 	public void Init()
 	{
 		initMap.interactable = false;
+		initMap.blocksRaycasts = false;
 		state = GameState.IDLE;
 		CreateMap(MAP_WIDTH, MAP_HEIGHT);
 		cameraManager.Snap((float)(MAP_WIDTH - 1) / 2, (float)(MAP_HEIGHT - 1) / 2);
@@ -93,8 +93,8 @@ public class GameManager : MonoBehaviour
 
 	public void Undo()
 	{
-		if(selectedUnit)
-		selectedUnit.Undo();
+		if(selectedObject)
+		selectedObject.Undo();
 	}
 
 	public void CreateMap(int width, int height)
@@ -139,6 +139,18 @@ public class GameManager : MonoBehaviour
 		return tempUnit;
 	}
 
+	public bool ValidateTile(int _x, int _y)
+	{
+		if (_x < 0 || _y < 0 || _x >= MAP_WIDTH || _y >= MAP_HEIGHT)
+		{
+			return false;
+		}
+		else
+		{
+			return true;
+		}
+	}
+
 	public Tile GetTile(int _x, int _y)
 	{
 		if(_x < 0 || _y < 0 || _x >= MAP_WIDTH || _y >= MAP_HEIGHT)
@@ -154,6 +166,10 @@ public class GameManager : MonoBehaviour
 
 	public void EndTurn()
 	{
+		if(selectedObject)
+		{
+			selectedObject.Unselect();
+		}
 		currentPlayer++;
 		if (currentPlayer >= players.Length)
 		{

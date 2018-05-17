@@ -4,35 +4,49 @@ using UnityEngine;
 using Castle;
 using Sigtrap.Relays;
 
-public class Unit : MonoBehaviour
+public class Unit : TileObject
 {
 	public SpriteRenderer sr;
 	public Tile prevTile;
-	public Tile tile;
-	[HideInInspector]
-	public int health;
-	public int maxHealth;
-	public int movementRange, attackMaxRange, attackMinRange;
+
+	public enum UnitPhase
+	{
+		IDLE,
+		MOVE,
+		FACING
+	}
+
+	public UnitPhase unitPhase;
+
+	public enum Facing
+	{
+		UP,
+		DOWN,
+		LEFT,
+		RIGHT
+	}
+	public Facing facing;
+
+	public UnitData data;
+
 	public int movementUsed;
-
-	public int spriteIndex;
-
-	public int damage;
-
 	public bool moving;
+
 	public Pathfinding pathfinding;
 	public Pathfinding rPathfinding;
 	private Tile[] moveRangeTiles;
 	private List<Tile> attackRangeTiles;
 	private Tile moveTile;
+	private Tile faceTile;
+	private List<Tile> faceTiles;
+	private List<Tile> coneTiles;
 
 	public GameObject attackReticule;
+	public GameObject faceIndicator;
 	public SpriteRenderer selector;
 	public PathDisplay pathDisplay;
 
-	public Unit attackTarget;
-
-	public int player;
+	public TileObject attackTarget;
 
 	public Color moveColor;
 	public Color attackColor;
@@ -55,9 +69,30 @@ public class Unit : MonoBehaviour
 		transform.position = new Vector3(tile.x, tile.y, -0.1f);
 	}
 
+	public void SetFacing(Facing _face)
+	{
+		facing = _face;
+		switch(facing)
+		{
+			case Facing.UP:
+				faceIndicator.transform.rotation = Quaternion.identity;
+				break;
+			case Facing.DOWN:
+				faceIndicator.transform.rotation = Quaternion.Euler(0,0,180);
+				break;
+			case Facing.LEFT:
+				faceIndicator.transform.rotation = Quaternion.Euler(0, 0, 270);
+				break;
+			case Facing.RIGHT:
+				faceIndicator.transform.rotation = Quaternion.Euler(0, 0, 90);
+				break;
+		}
+		Unselect();
+	}
+
 	void ResetUnit()
 	{
-		health = maxHealth;
+		health = data.maxHealth;
 		prevTile = tile;
 		sr.color = GameManager.instance.players[player].unitColor;
 		if (GameManager.instance.currentPlayer == player)
@@ -88,48 +123,84 @@ public class Unit : MonoBehaviour
 		Attack();
 	}
 
-	public void Select()
+	public override void Select()
 	{
-		if(GameManager.instance.currentPlayer == player)
+		base.Select();
+		if (GameManager.instance.selectedObject == this)
 		{
-			if(GameManager.instance.selectedUnit != null)
-			{
-				GameManager.instance.selectedUnit.Unselect();
-			}
-			GameManager.instance.selectedUnit = this;
 			GameManager.instance.unitDisplay.LoadUnit(this);
 			selector.color = GameManager.instance.players[player].unitColor;
-			if (movementRange - movementUsed > 1)
+			if (GameManager.instance.currentPlayer == player)
 			{
-				moveTile = tile;
-				GetMovementTiles();
-				moving = true;
-				GameManager.instance.state = GameManager.GameState.MOVE;
-				GetAttackTiles(moveTile);
-				
+				GameManager.instance.unitDisplay.actionsVisible = true;
 			}
 		}
 	}
-	public void Undo()
+
+	public override void Unselect()
+	{
+		GameManager.instance.selectedObject = null;
+		selector.color = Color.grey;
+		GameManager.instance.unitDisplay.Hide();
+		unitPhase = UnitPhase.IDLE;
+		GameManager.instance.state = GameManager.GameState.IDLE;
+		if(movementUsed == 0)
+		{
+			pathDisplay.hidden = true;
+		}
+	}
+
+	public override void Undo()
 	{
 		SetTile(prevTile);
 		movementUsed = 0;
 		attackTarget = null;
 		pathDisplay.hidden = true;
+		GameManager.instance.unitDisplay.LoadUnit(this);
 	}
 
-	public void Unselect()
+	public void StartMove()
 	{
-		GameManager.instance.selectedUnit = null;
-		
-		selector.color = Color.grey;
+		if (data.movementRange - movementUsed > 1)
+		{
+			unitPhase = UnitPhase.MOVE;
+			moveTile = tile;
+			GetMovementTiles();
+			GameManager.instance.state = GameManager.GameState.DISABLESELECTING;
+		}
+	}
+
+	public void StartFacing()
+	{
+		unitPhase = UnitPhase.FACING;
+		GameManager.instance.state = GameManager.GameState.DISABLESELECTING;
+		GetFaceCone(facing, data.attackMaxRange);
+		faceTiles = new List<Tile>();
+		int _x = tile.x;
+		int _y = tile.y;
+		if (_y + 1 <= GameManager.MAP_HEIGHT)
+		{
+			faceTiles.Add(GameManager.instance.GetTile(_x, _y + 1));
+		}
+		if (_y - 1 >= 0)
+		{
+			faceTiles.Add(GameManager.instance.GetTile(_x, _y - 1));
+		}
+		if (_x - 1 >= 0)
+		{
+			faceTiles.Add(GameManager.instance.GetTile(_x - 1, _y));
+		}
+		if (_x + 1 <= GameManager.MAP_WIDTH)
+		{
+			faceTiles.Add(GameManager.instance.GetTile(_x + 1, _y));
+		}
 	}
 
 	void Attack()
 	{
 		if(attackTarget)
 		{
-			attackTarget.health -= damage;
+			attackTarget.health -= data.damage;
 			attackTarget = null;
 			attackReticule.SetActive(false);
 		}
@@ -139,28 +210,29 @@ public class Unit : MonoBehaviour
 	{
 		if (rPathfinding == null)
 		{
-			rPathfinding = Pathfinding.GetRange(tile, movementRange - movementUsed);
+			rPathfinding = Pathfinding.GetRange(tile, data.movementRange - movementUsed);
 		}
 		else
 		{
-			rPathfinding.CreateRangedMap(tile, movementRange - movementUsed);
+			rPathfinding.CreateRangedMap(tile, data.movementRange - movementUsed);
 		}
 		moveRangeTiles = new Tile[rPathfinding.path.Count];
 		for (int i = 0; i < rPathfinding.path.Count; i++)
 		{
 			moveRangeTiles[i] = GameManager.instance.GetTile(rPathfinding.path[i]);
 		}
+		GetAttackTiles(tile);
 	}
 
-	void GetAttackTiles(Tile _tile)
+	void GetAttackTiles(Tile _tile, bool coneCheck = false)
 	{
 		if (rPathfinding == null)
 		{
-			rPathfinding = Pathfinding.GetRange(_tile, attackMaxRange);
+			rPathfinding = Pathfinding.GetRange(_tile, data.attackMaxRange,true);
 		}
 		else
 		{
-			rPathfinding.CreateRangedMap(_tile, attackMaxRange);
+			rPathfinding.CreateRangedMap(_tile, data.attackMaxRange,true);
 		}
 		if(attackRangeTiles == null)
 		{
@@ -174,12 +246,33 @@ public class Unit : MonoBehaviour
 		{
 			attackRangeTiles.Add(GameManager.instance.GetTile(rPathfinding.path[i]));
 		}
-		rPathfinding.CreateRangedMap(_tile, attackMinRange);
-		for (int i = 0; i < attackRangeTiles.Count; i++)
+		rPathfinding.CreateRangedMap(_tile, data.attackMinRange, true);
+		print(attackRangeTiles.Count);
+		for (int i = attackRangeTiles.Count - 1; i >= 0; i--)
 		{
+			bool removed = false;
 			for(int j = 0; j < rPathfinding.path.Count; j++)
 			{
 				if(attackRangeTiles[i] == GameManager.instance.GetTile(rPathfinding.path[j]))
+				{
+					attackRangeTiles.RemoveAt(i);
+					removed = true;
+					break;
+				}
+			}
+
+			if(!removed && coneCheck)
+			{
+				bool inCone = false;
+				for (int k = 0; k < coneTiles.Count; k++)
+				{
+					if (attackRangeTiles[i] == coneTiles[k])
+					{
+						inCone = true;
+						break;
+					}
+				}
+				if(!inCone)
 				{
 					attackRangeTiles.RemoveAt(i);
 				}
@@ -190,18 +283,11 @@ public class Unit : MonoBehaviour
 	public void Move(Tile destination)
 	{
 		SetTile(destination);
-		GameManager.instance.state = GameManager.GameState.IDLE;
-		//Unselect();
-		moving = false;
-		if (attackTarget)
-		{
-			attackReticule.transform.position = attackTarget.transform.position;
-			attackReticule.gameObject.SetActive(true);
-		}
-		else
-		{
-			attackReticule.gameObject.SetActive(false);
-		}
+		//unitPhase = UnitPhase.IDLE;
+		//GameManager.instance.state = GameManager.GameState.IDLE;
+		
+		GameManager.instance.unitDisplay.LoadUnit(this);
+		StartFacing();
 	}
 
 	bool CheckRange(Tile tileToCheck)
@@ -234,35 +320,9 @@ public class Unit : MonoBehaviour
 				GetAttackTiles(moveTile);
 			}
 		}
-		bool foundGuy = false;
 		for (int i = 0; i < attackRangeTiles.Count; i++)
 		{
-			if(attackRangeTiles[i].occupant != null)
-			{
-				if(attackRangeTiles[i].occupant.player != player)
-				{
-					attackTarget = attackRangeTiles[i].occupant;
-					foundGuy = true;
-				}
-			}
-			attackRangeTiles[i].Highlight(attackColor);
-		}
-		if(attackTarget)
-		{
-			if(!foundGuy)
-			{
-				attackReticule.gameObject.SetActive(false);
-				attackTarget = null;
-			}
-			else
-			{
-				attackReticule.transform.position = attackTarget.transform.position;
-				attackReticule.gameObject.SetActive(true);
-			}
-		}
-		else
-		{
-			attackReticule.gameObject.SetActive(false);
+			attackRangeTiles[i].HighlightSecondary(attackColor);
 		}
 		if (moveTile != tile)
 		{
@@ -285,8 +345,165 @@ public class Unit : MonoBehaviour
 				}
 				else if (CheckRange((Tile)CastleManager.selectedObject))
 				{
-					Move(moveTile);
 					movementUsed += pathfinding.path[pathfinding.path.Count - 1].index;
+					Move(moveTile);
+				}
+			}
+		}
+	}
+
+	void GetFaceCone(Facing _face, int range = 2)
+	{
+		coneTiles = new List<Tile>();
+		switch(_face)
+		{
+			case Facing.UP:
+				for(int i = 0; i < range; i++)
+				{
+					for (int j = -i; j <= i; j++)
+					{
+						if(GameManager.instance.ValidateTile(tile.x + j, tile.y + i))
+						{
+							coneTiles.Add(GameManager.instance.GetTile(tile.x + j, tile.y + i));
+						}
+					}
+				}
+				break;
+			case Facing.DOWN:
+				for (int i = 0; i < range; i++)
+				{
+					for (int j = -i; j <= i; j++)
+					{
+						if (GameManager.instance.ValidateTile(tile.x + j, tile.y - i))
+						{
+							coneTiles.Add(GameManager.instance.GetTile(tile.x + j, tile.y - i));
+						}
+					}
+				}
+				break;
+			case Facing.RIGHT:
+				for (int i = 0; i < range; i++)
+				{
+					for (int j = -i; j <= i; j++)
+					{
+						if (GameManager.instance.ValidateTile(tile.x + i, tile.y + j))
+						{
+							coneTiles.Add(GameManager.instance.GetTile(tile.x + i, tile.y + j));
+						}
+					}
+				}
+				break;
+			case Facing.LEFT:
+				for (int i = 0; i < range; i++)
+				{
+					for (int j = -i; j <= i; j++)
+					{
+						if (GameManager.instance.ValidateTile(tile.x - i, tile.y + j))
+						{
+							coneTiles.Add(GameManager.instance.GetTile(tile.x - i, tile.y + j));
+						}
+					}
+				}
+				break;
+		}
+	}
+
+	void FaceCheck()
+	{
+		if (CastleManager.hoveredObject is Tile && CastleManager.hoveredObject != faceTile)
+		{
+			for (int i = 0; i < faceTiles.Count; i++)
+			{
+				if (CastleManager.hoveredObject == faceTiles[i])
+				{
+					faceTile = (Tile)CastleManager.selectedObject;
+					if (faceTiles[i].x > tile.x)
+					{
+						GetFaceCone(Facing.RIGHT, data.attackMaxRange);
+					}
+					else if (faceTiles[i].x < tile.x)
+					{
+						GetFaceCone(Facing.LEFT, data.attackMaxRange);
+					}
+					else
+					{
+						if (faceTiles[i].y > tile.y)
+						{
+							GetFaceCone(Facing.UP, data.attackMaxRange);
+						}
+						else if (faceTiles[i].y < tile.y)
+						{
+							GetFaceCone(Facing.DOWN, data.attackMaxRange);
+						}
+					}
+					GetAttackTiles(tile,true);
+					break;
+				}
+			}
+		}
+		bool foundEnemy = false;
+		for (int i = 0; i < attackRangeTiles.Count; i++)
+		{
+			if(attackRangeTiles[i].occupant && !foundEnemy)
+			{
+				if(attackRangeTiles[i].occupant.player != player)
+				{
+					foundEnemy = true;
+					attackTarget = attackRangeTiles[i].occupant;
+				}
+			}
+			attackRangeTiles[i].Highlight(attackColor);
+		}
+		if(!foundEnemy)
+		{
+			attackTarget = null;
+		}
+		if (attackTarget)
+		{
+			attackReticule.transform.position = attackTarget.transform.position;
+			attackReticule.gameObject.SetActive(true);
+		}
+		else
+		{
+			attackReticule.gameObject.SetActive(false);
+		}
+		for (int i = 0; i < faceTiles.Count; i++)
+		{
+			faceTiles[i].HighlightSecondary(moveColor);
+		}
+		if (CastleManager.selectedObject && CastleManager.selectedObject is Tile)
+		{
+			if (CastleManager.selectedObject == tile)
+			{
+				//Unselect();
+			}
+			else
+			{
+				for (int i = 0; i < faceTiles.Count; i++)
+				{
+					if(CastleManager.selectedObject == faceTiles[i])
+					{
+						if(faceTiles[i].x > tile.x)
+						{
+							SetFacing(Facing.LEFT);
+						}
+						else if(faceTiles[i].x < tile.x)
+						{
+							SetFacing(Facing.RIGHT);
+						}
+						else
+						{
+							if (faceTiles[i].y > tile.y)
+							{
+								SetFacing(Facing.UP);
+							}
+							else if (faceTiles[i].y < tile.y)
+							{
+								SetFacing(Facing.DOWN);
+							}
+						}
+						break;
+					}
 				}
 			}
 		}
@@ -295,9 +512,17 @@ public class Unit : MonoBehaviour
 	// Update is called once per frame
 	void Update ()
 	{
-		if(moving)
+		switch(unitPhase)
 		{
-			MoveCheck();
+			case UnitPhase.IDLE:
+
+				break;
+			case UnitPhase.MOVE:
+				MoveCheck();
+				break;
+			case UnitPhase.FACING:
+				FaceCheck();
+				break;
 		}
 	}
 }
