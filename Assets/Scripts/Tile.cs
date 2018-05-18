@@ -44,6 +44,14 @@ public class Tile : CastleObject
 		secondSr.color = _color;
 		highlightedSecond = true;
 	}
+
+	public void Hurt(Stats.DamageType damageType, int value)
+	{
+		if(occupant)
+		{
+			occupant.health -= value;
+		}
+	}
 	// Update is called once per frame
 	void LateUpdate ()
 	{

@@ -216,6 +216,15 @@ MonoBehaviour:
     attackMinRange: 1
     spriteIndex: 0
     damage: 1
+    attacks:
+    - name: Attack
+      damageScale: 1
+      damageType: 0
+      minRange: 0
+      maxRange: 2
+      aoe: 0
+      aoeMinRange: 0
+      aoeMaxRange: 0
   movementUsed: 0
   moving: 0
   attackReticule: {fileID: 1762443537812708}
@@ -405,7 +414,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300008, guid: 9d31655b780764e44a2e44f812f6a283, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.72794116, g: 0.72794116, b: 0.72794116, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

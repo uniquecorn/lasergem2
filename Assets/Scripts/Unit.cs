@@ -13,7 +13,8 @@ public class Unit : TileObject
 	{
 		IDLE,
 		MOVE,
-		FACING
+		FACING,
+		ATTACK
 	}
 
 	public UnitPhase unitPhase;
@@ -32,6 +33,10 @@ public class Unit : TileObject
 	public int movementUsed;
 	public bool moving;
 
+	private int minAttackRange;
+	private int maxAttackRange;
+	private int currentAttack;
+
 	public Pathfinding pathfinding;
 	public Pathfinding rPathfinding;
 	private Tile[] moveRangeTiles;
@@ -46,7 +51,7 @@ public class Unit : TileObject
 	public SpriteRenderer selector;
 	public PathDisplay pathDisplay;
 
-	public TileObject attackTarget;
+	public Tile attackTarget;
 
 	public Color moveColor;
 	public Color attackColor;
@@ -87,7 +92,7 @@ public class Unit : TileObject
 				faceIndicator.transform.rotation = Quaternion.Euler(0, 0, 90);
 				break;
 		}
-		Unselect();
+		unitPhase = UnitPhase.IDLE;
 	}
 
 	void ResetUnit()
@@ -115,6 +120,7 @@ public class Unit : TileObject
 		}
 		else
 		{
+			attackReticule.gameObject.SetActive(false);
 			selector.gameObject.SetActive(false);
 		}
 		pathDisplay.hidden = true;
@@ -128,11 +134,15 @@ public class Unit : TileObject
 		base.Select();
 		if (GameManager.instance.selectedObject == this)
 		{
-			GameManager.instance.unitDisplay.LoadUnit(this);
+			
 			selector.color = GameManager.instance.players[player].unitColor;
 			if (GameManager.instance.currentPlayer == player)
 			{
-				GameManager.instance.unitDisplay.actionsVisible = true;
+				GameManager.instance.unitDisplay.LoadUnit(this,true);
+			}
+			else
+			{
+				GameManager.instance.unitDisplay.LoadUnit(this);
 			}
 		}
 	}
@@ -153,16 +163,19 @@ public class Unit : TileObject
 	public override void Undo()
 	{
 		SetTile(prevTile);
+		attackReticule.gameObject.SetActive(false);
 		movementUsed = 0;
 		attackTarget = null;
 		pathDisplay.hidden = true;
-		GameManager.instance.unitDisplay.LoadUnit(this);
+		GameManager.instance.unitDisplay.LoadUnit(this,true);
 	}
 
 	public void StartMove()
 	{
 		if (data.movementRange - movementUsed > 1)
 		{
+			attackTarget = null;
+			attackReticule.gameObject.SetActive(false);
 			unitPhase = UnitPhase.MOVE;
 			moveTile = tile;
 			GetMovementTiles();
@@ -170,11 +183,13 @@ public class Unit : TileObject
 		}
 	}
 
-	public void StartFacing()
+	public void StartAttack(int attack)
 	{
-		unitPhase = UnitPhase.FACING;
-		GameManager.instance.state = GameManager.GameState.DISABLESELECTING;
-		GetFaceCone(facing, data.attackMaxRange);
+		attackTarget = null;
+		attackReticule.gameObject.SetActive(false);
+		minAttackRange = data.attacks[attack].minRange;
+		maxAttackRange = data.attacks[attack].maxRange;
+		currentAttack = attack;
 		faceTiles = new List<Tile>();
 		int _x = tile.x;
 		int _y = tile.y;
@@ -194,13 +209,16 @@ public class Unit : TileObject
 		{
 			faceTiles.Add(GameManager.instance.GetTile(_x + 1, _y));
 		}
+		unitPhase = UnitPhase.ATTACK;
+		GameManager.instance.state = GameManager.GameState.DISABLESELECTING;
+		GetAttackTiles(tile,false);
 	}
 
 	void Attack()
 	{
 		if(attackTarget)
 		{
-			attackTarget.health -= data.damage;
+			attackTarget.Hurt(data.attacks[currentAttack].damageType, Mathf.FloorToInt(data.damage * data.attacks[currentAttack].damageScale));
 			attackTarget = null;
 			attackReticule.SetActive(false);
 		}
@@ -221,18 +239,18 @@ public class Unit : TileObject
 		{
 			moveRangeTiles[i] = GameManager.instance.GetTile(rPathfinding.path[i]);
 		}
-		GetAttackTiles(tile);
+		//GetAttackTiles(tile);
 	}
 
 	void GetAttackTiles(Tile _tile, bool coneCheck = false)
 	{
 		if (rPathfinding == null)
 		{
-			rPathfinding = Pathfinding.GetRange(_tile, data.attackMaxRange,true);
+			rPathfinding = Pathfinding.GetRange(_tile, maxAttackRange,true);
 		}
 		else
 		{
-			rPathfinding.CreateRangedMap(_tile, data.attackMaxRange,true);
+			rPathfinding.CreateRangedMap(_tile, maxAttackRange, true);
 		}
 		if(attackRangeTiles == null)
 		{
@@ -246,7 +264,7 @@ public class Unit : TileObject
 		{
 			attackRangeTiles.Add(GameManager.instance.GetTile(rPathfinding.path[i]));
 		}
-		rPathfinding.CreateRangedMap(_tile, data.attackMinRange, true);
+		rPathfinding.CreateRangedMap(_tile, minAttackRange, true);
 		print(attackRangeTiles.Count);
 		for (int i = attackRangeTiles.Count - 1; i >= 0; i--)
 		{
@@ -286,8 +304,23 @@ public class Unit : TileObject
 		//unitPhase = UnitPhase.IDLE;
 		//GameManager.instance.state = GameManager.GameState.IDLE;
 		
-		GameManager.instance.unitDisplay.LoadUnit(this);
-		StartFacing();
+		GameManager.instance.unitDisplay.LoadUnit(this,true);
+		if(prevTile.y < destination.y)
+		{
+			SetFacing(Facing.UP);
+		}
+		else if(prevTile.y > destination.y)
+		{
+			SetFacing(Facing.DOWN);
+		}
+		else if (prevTile.x > destination.x)
+		{
+			SetFacing(Facing.RIGHT);
+		}
+		else if (prevTile.x < destination.x)
+		{
+			SetFacing(Facing.LEFT);
+		}
 	}
 
 	bool CheckRange(Tile tileToCheck)
@@ -317,13 +350,13 @@ public class Unit : TileObject
 			if(CheckRange((Tile)CastleManager.hoveredObject))
 			{
 				moveTile = (Tile)CastleManager.hoveredObject;
-				GetAttackTiles(moveTile);
+				//GetAttackTiles(moveTile);
 			}
 		}
-		for (int i = 0; i < attackRangeTiles.Count; i++)
-		{
-			attackRangeTiles[i].HighlightSecondary(attackColor);
-		}
+		//for (int i = 0; i < attackRangeTiles.Count; i++)
+		//{
+		//	attackRangeTiles[i].HighlightSecondary(attackColor);
+		//}
 		if (moveTile != tile)
 		{
 			if(pathfinding == null)
@@ -386,9 +419,9 @@ public class Unit : TileObject
 				{
 					for (int j = -i; j <= i; j++)
 					{
-						if (GameManager.instance.ValidateTile(tile.x + i, tile.y + j))
+						if (GameManager.instance.ValidateTile(tile.x - i, tile.y + j))
 						{
-							coneTiles.Add(GameManager.instance.GetTile(tile.x + i, tile.y + j));
+							coneTiles.Add(GameManager.instance.GetTile(tile.x - i, tile.y + j));
 						}
 					}
 				}
@@ -398,9 +431,9 @@ public class Unit : TileObject
 				{
 					for (int j = -i; j <= i; j++)
 					{
-						if (GameManager.instance.ValidateTile(tile.x - i, tile.y + j))
+						if (GameManager.instance.ValidateTile(tile.x + i, tile.y + j))
 						{
-							coneTiles.Add(GameManager.instance.GetTile(tile.x - i, tile.y + j));
+							coneTiles.Add(GameManager.instance.GetTile(tile.x + i, tile.y + j));
 						}
 					}
 				}
@@ -408,103 +441,65 @@ public class Unit : TileObject
 		}
 	}
 
-	void FaceCheck()
+	bool TileInCone(Tile _tile, Facing _face)
 	{
-		if (CastleManager.hoveredObject is Tile && CastleManager.hoveredObject != faceTile)
+		GetFaceCone(_face, maxAttackRange);
+		for(int i = 0; i < coneTiles.Count; i++)
 		{
-			for (int i = 0; i < faceTiles.Count; i++)
+			if(_tile == coneTiles[i])
 			{
-				if (CastleManager.hoveredObject == faceTiles[i])
-				{
-					faceTile = (Tile)CastleManager.selectedObject;
-					if (faceTiles[i].x > tile.x)
-					{
-						GetFaceCone(Facing.RIGHT, data.attackMaxRange);
-					}
-					else if (faceTiles[i].x < tile.x)
-					{
-						GetFaceCone(Facing.LEFT, data.attackMaxRange);
-					}
-					else
-					{
-						if (faceTiles[i].y > tile.y)
-						{
-							GetFaceCone(Facing.UP, data.attackMaxRange);
-						}
-						else if (faceTiles[i].y < tile.y)
-						{
-							GetFaceCone(Facing.DOWN, data.attackMaxRange);
-						}
-					}
-					GetAttackTiles(tile,true);
-					break;
-				}
+				return true;
 			}
 		}
-		bool foundEnemy = false;
+		return false;
+	}
+
+	void AttackCheck()
+	{
 		for (int i = 0; i < attackRangeTiles.Count; i++)
 		{
-			if(attackRangeTiles[i].occupant && !foundEnemy)
-			{
-				if(attackRangeTiles[i].occupant.player != player)
-				{
-					foundEnemy = true;
-					attackTarget = attackRangeTiles[i].occupant;
-				}
-			}
 			attackRangeTiles[i].Highlight(attackColor);
-		}
-		if(!foundEnemy)
-		{
-			attackTarget = null;
-		}
-		if (attackTarget)
-		{
-			attackReticule.transform.position = attackTarget.transform.position;
-			attackReticule.gameObject.SetActive(true);
-		}
-		else
-		{
-			attackReticule.gameObject.SetActive(false);
-		}
-		for (int i = 0; i < faceTiles.Count; i++)
-		{
-			faceTiles[i].HighlightSecondary(moveColor);
 		}
 		if (CastleManager.selectedObject && CastleManager.selectedObject is Tile)
 		{
-			if (CastleManager.selectedObject == tile)
+			bool inRange = false;
+			for (int i = 0; i < attackRangeTiles.Count; i++)
 			{
-				//Unselect();
+				if(CastleManager.selectedObject == attackRangeTiles[i])
+				{
+					attackTarget = attackRangeTiles[i];
+					inRange = true;
+					break;
+				}
+			}
+			if(!inRange)
+			{
+				Unselect();
 			}
 			else
 			{
-				for (int i = 0; i < faceTiles.Count; i++)
+				attackReticule.transform.position = attackTarget.transform.position - Vector3.forward;
+				attackReticule.gameObject.SetActive(true);
+
+				if(TileInCone(attackTarget,Facing.UP))
 				{
-					if(CastleManager.selectedObject == faceTiles[i])
-					{
-						if(faceTiles[i].x > tile.x)
-						{
-							SetFacing(Facing.LEFT);
-						}
-						else if(faceTiles[i].x < tile.x)
-						{
-							SetFacing(Facing.RIGHT);
-						}
-						else
-						{
-							if (faceTiles[i].y > tile.y)
-							{
-								SetFacing(Facing.UP);
-							}
-							else if (faceTiles[i].y < tile.y)
-							{
-								SetFacing(Facing.DOWN);
-							}
-						}
-						break;
-					}
+					SetFacing(Facing.UP);
 				}
+				else if(TileInCone(attackTarget, Facing.DOWN))
+				{
+					SetFacing(Facing.DOWN);
+				}
+				else if (TileInCone(attackTarget, Facing.LEFT))
+				{
+					SetFacing(Facing.LEFT);
+				}
+				else if (TileInCone(attackTarget, Facing.RIGHT))
+				{
+					SetFacing(Facing.RIGHT);
+				}
+
+				unitPhase = UnitPhase.IDLE;
+				GameManager.instance.state = GameManager.GameState.IDLE;
 			}
 		}
 	}
@@ -521,7 +516,10 @@ public class Unit : TileObject
 				MoveCheck();
 				break;
 			case UnitPhase.FACING:
-				FaceCheck();
+
+				break;
+			case UnitPhase.ATTACK:
+				AttackCheck();
 				break;
 		}
 	}

@@ -6,12 +6,18 @@ using UnityEngine.UI;
 public class UnitDisplay : MonoBehaviour
 {
 	public RectTransform displayTransform;
+
 	public RectTransform actions;
+	public RectTransform addAttack;
+	public List<AttackButton> attacks;
+	public GameObject attackButtonPrefab;
+	public AttackEditor attackEditor;
+
 	public Unit unit;
 	public Image icon;
 	public Image border;
-	public InputField health,damage,movement,minrange,maxrange;
-	public Button moveButton,attackButton;
+	public InputField health,damage,movement;
+	public Button moveButton;
 
 	public Sprite[] unitSprites;
 
@@ -20,20 +26,19 @@ public class UnitDisplay : MonoBehaviour
 	// Use this for initialization
 	void Start ()
 	{
-		
+		attacks = new List<AttackButton>();
 	}
 
-	public void LoadUnit(Unit _unit)
+	public void LoadUnit(Unit _unit,bool _actionsVisible = false)
 	{
 		unit = _unit;
 		health.text = unit.health.ToString();
 		damage.text = unit.data.damage.ToString();
 		movement.text = unit.data.movementRange.ToString();
-		maxrange.text = unit.data.attackMaxRange.ToString();
-		minrange.text = unit.data.attackMinRange.ToString();
 		icon.sprite = unit.sr.sprite;
 		border.color = GameManager.instance.players[unit.player].unitColor;
 		visible = true;
+		actionsVisible = _actionsVisible;
 		if((unit.data.movementRange - unit.movementUsed) > 1)
 		{
 			moveButton.interactable = true;	
@@ -42,16 +47,83 @@ public class UnitDisplay : MonoBehaviour
 		{
 			moveButton.interactable = false;
 		}
+		if(_actionsVisible)
+		{
+			if (unit.data.attacks == null)
+			{
+				unit.data.attacks = new List<Attack>();
+			}
+			for (int i = 0; i < unit.data.attacks.Count; i++)
+			{
+				InitAttack(i);
+			}
+			addAttack.anchoredPosition = new Vector2(0, 60 + (unit.data.attacks.Count * 30));
+		}
+		else
+		{
+			for (int i = 0; i < attacks.Count; i++)
+			{
+				attacks[i].gameObject.SetActive(false);
+			}
+		}
+	}
+
+	public void InitAttack(int pos)
+	{
+		Attack _attack = unit.data.attacks[pos];
+		if(pos < attacks.Count)
+		{
+			attacks[pos].gameObject.SetActive(true);
+		}
+		else
+		{
+			CreateAttackButton(pos);
+		}
+		attacks[pos].editorTransform.anchoredPosition = new Vector2(0, 60 + (pos * 30));
+		attacks[pos].editorTransform.anchoredPosition = new Vector2(0, 60 + (pos * 30));
+		attacks[pos].attackName.text = _attack.name;
+		attacks[pos].icon.sprite = StyleSheet.instance.GetStyle(_attack.damageType).icon;
+		attacks[pos].position = pos;
+	}
+
+	public AttackButton CreateAttackButton(int pos)
+	{
+		AttackButton tempButton = Instantiate(attackButtonPrefab, actions).GetComponent<AttackButton>();
+		tempButton.unitDisplay = this;
+		tempButton.position = pos;
+		attacks.Add(tempButton);
+		return tempButton;
+	}
+
+	public void AddAttack()
+	{
+		if(attackEditor.shown)
+		{
+			return;
+		}
+		attackEditor.position = unit.data.attacks.Count;
+		attackEditor.shown = true;
+		unit.data.attacks.Add(new Attack());
+		attackEditor.Init();
 	}
 
 	public void Hide()
 	{
 		visible = false;
 		actionsVisible = false;
+		attackEditor.shown = false;
+		for (int i = 0; i < attacks.Count; i++)
+		{
+			attacks[i].gameObject.SetActive(false);
+		}
 	}
 
 	public void SwapSprite()
 	{
+		if (attackEditor.shown)
+		{
+			return;
+		}
 		int index = unit.data.spriteIndex + 1;
 		if(index >= GameManager.instance.unitSprites.Length)
 		{
@@ -75,18 +147,23 @@ public class UnitDisplay : MonoBehaviour
 		unit.data.movementRange = int.Parse(value);
 		unit.movementUsed = 0;
 	}
-	public void SetRange(string value)
-	{
-		unit.data.attackMaxRange = int.Parse(value);
-	}
-	public void SetMinRange(string value)
-	{
-		unit.data.attackMinRange = int.Parse(value);
-	}
 
 	public void Move()
 	{
+		if (attackEditor.shown)
+		{
+			return;
+		}
 		unit.StartMove();
+	}
+
+	public void Undo()
+	{
+		if (attackEditor.shown)
+		{
+			return;
+		}
+		unit.Undo();
 	}
 
 	// Update is called once per frame
@@ -106,7 +183,7 @@ public class UnitDisplay : MonoBehaviour
 		}
 		else
 		{
-			actions.anchoredPosition = Vector2.Lerp(actions.anchoredPosition, Vector2.down * 90, Time.deltaTime * 8);
+			actions.anchoredPosition = Vector2.Lerp(actions.anchoredPosition, Vector2.down * 120, Time.deltaTime * 8);
 		}
 	}
 }

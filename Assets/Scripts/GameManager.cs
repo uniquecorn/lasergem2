@@ -91,12 +91,6 @@ public class GameManager : MonoBehaviour
 		cameraManager.Snap((float)(MAP_WIDTH - 1) / 2, (float)(MAP_HEIGHT - 1) / 2);
 	}
 
-	public void Undo()
-	{
-		if(selectedObject)
-		selectedObject.Undo();
-	}
-
 	public void CreateMap(int width, int height)
 	{
 		MAP_WIDTH = width;
