@@ -16,7 +16,7 @@ public class UnitDisplay : MonoBehaviour
 	public Unit unit;
 	public Image icon;
 	public Image border;
-	public InputField health,damage,movement;
+	public InputField nameInput,health,damage,movement;
 	public Button moveButton;
 
 	public Sprite[] unitSprites;
@@ -32,10 +32,11 @@ public class UnitDisplay : MonoBehaviour
 	public void LoadUnit(Unit _unit,bool _actionsVisible = false)
 	{
 		unit = _unit;
+		nameInput.text = unit.data.name;
 		health.text = unit.health.ToString();
 		damage.text = unit.data.damage.ToString();
 		movement.text = unit.data.movementRange.ToString();
-		icon.sprite = unit.sr.sprite;
+		icon.sprite = unit.sr.sprite = GameManager.instance.unitSprites[unit.data.spriteIndex];
 		border.color = GameManager.instance.players[unit.player].unitColor;
 		visible = true;
 		actionsVisible = _actionsVisible;
@@ -132,7 +133,10 @@ public class UnitDisplay : MonoBehaviour
 		unit.data.spriteIndex = index;
 		unit.sr.sprite = icon.sprite = GameManager.instance.unitSprites[index];
 	}
-
+	public void SetName(string value)
+	{
+		unit.data.name = value;
+	}
 	public void SetHealth(string value)
 	{
 		unit.health = int.Parse(value);
@@ -164,6 +168,12 @@ public class UnitDisplay : MonoBehaviour
 			return;
 		}
 		unit.Undo();
+	}
+
+	public void Save()
+	{
+		SaveManager.Save(unit.data);
+		GameManager.instance.LoadSavedUnits();
 	}
 
 	// Update is called once per frame

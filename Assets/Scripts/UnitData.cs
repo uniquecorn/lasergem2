@@ -3,6 +3,7 @@
 [System.Serializable]
 public class UnitData
 {
+	public string name;
 	public int maxHealth;
 	public int movementRange;
 

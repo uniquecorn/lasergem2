@@ -14,8 +14,10 @@ public class GameManager : MonoBehaviour
 
 	public GameObject tilePrefab;
 	public GameObject unitPrefab;
+	public GameObject unitDataLoaderPrefab;
 
 	public Transform mapTransform;
+	public RectTransform unitLoaderTransform;
 
 	public enum GameState
 	{
@@ -44,6 +46,9 @@ public class GameManager : MonoBehaviour
 
 	public Relay endTurn;
 
+	public List<UnitData> unitsSaved;
+	private List<UnitLoader> unitLoaders;
+
 	private void Awake()
 	{
 		instance = this;
@@ -59,6 +64,8 @@ public class GameManager : MonoBehaviour
 		SetUnits(1);
 		gameUI.alpha = 0;
 		initMap.alpha = 1;
+		unitLoaders = new List<UnitLoader>();
+		LoadSavedUnits();
 		//CastleManager.showLog = true;
 		//CreateMap(5, 5);
 		//cameraManager.Snap(2f, 2f);
@@ -177,6 +184,28 @@ public class GameManager : MonoBehaviour
 	{
 		return GetTile(pathNode.x, pathNode.y);
 	}
+
+	public void LoadSavedUnits()
+	{
+		for(int i = unitLoaders.Count - 1; i >= 0; i--)
+		{
+			Destroy(unitLoaders[i].gameObject);
+			unitLoaders.RemoveAt(i);
+		}
+		unitsSaved = SaveManager.LoadAll();
+		if(unitsSaved.Count > 0)
+		{
+			for(int i = 0; i < unitsSaved.Count; i++)
+			{
+				UnitLoader loader = Instantiate(unitDataLoaderPrefab, unitLoaderTransform).GetComponent<UnitLoader>();
+				loader.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, -5 - (i * 60));
+				loader.LoadData(unitsSaved[i]);
+				unitLoaders.Add(loader);
+			}
+			unitLoaderTransform.sizeDelta = new Vector2(unitLoaderTransform.sizeDelta.x, 10 + (unitsSaved.Count * 60));
+		}
+	}
+
 	// Update is called once per frame
 	void Update ()
 	{
