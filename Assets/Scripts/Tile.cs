@@ -26,9 +26,9 @@ public class Tile : CastleObject
 			}
 			else
 			{
-				if (GameManager.instance.selectedObject != null)
+				if (GameManager.selectedObject != null)
 				{
-					GameManager.instance.selectedObject.Unselect();
+					GameManager.selectedObject.Unselect();
 				}
 			}
 		}

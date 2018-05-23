@@ -3,13 +3,10 @@
 [System.Serializable]
 public class UnitData
 {
-	public string name;
-	public int maxHealth;
-	public int movementRange;
-
-	public int spriteIndex;
-
-	public int damage;
+	public string name,description;
+	public int maxHealth,movementRange,damage,spriteIndex,cost,vision,expScale;
 
 	public List<Attack> attacks;
+
+	public string lua;
 }

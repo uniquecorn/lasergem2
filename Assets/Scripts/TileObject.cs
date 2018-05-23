@@ -7,23 +7,24 @@ public class TileObject : MonoBehaviour
 	public int health;
 	public Tile tile;
 	public int player;
+	public bool neutral;
 	public virtual void Select()
 	{
-		if (GameManager.instance.selectedObject != null)
+		if (GameManager.selectedObject != null)
 		{
-			if(GameManager.instance.selectedObject == this)
+			if(GameManager.selectedObject == this)
 			{
-				GameManager.instance.selectedObject.Unselect();
+				GameManager.selectedObject.Unselect();
 			}
 			else
 			{
-				GameManager.instance.selectedObject.Unselect();
-				GameManager.instance.selectedObject = this;
+				GameManager.selectedObject.Unselect();
+				GameManager.selectedObject = this;
 			}
 		}
 		else
 		{
-			GameManager.instance.selectedObject = this;
+			GameManager.selectedObject = this;
 		}
 	}
 

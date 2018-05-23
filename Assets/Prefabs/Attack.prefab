@@ -395,6 +395,8 @@ MonoBehaviour:
   position: 0
   icon: {fileID: 114674211944190312}
   attackName: {fileID: 114465418459418780}
+  edit: {fileID: 114427144354671038}
+  delete: {fileID: 114780422743892538}
 --- !u!114 &114780422743892538
 MonoBehaviour:
   m_ObjectHideFlags: 1

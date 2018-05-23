@@ -13,7 +13,7 @@ public class UnitLoader : MonoBehaviour
 	// Use this for initialization
 	public void Load ()
 	{
-		GameManager.instance.unitDisplay.unit.data = data;
+		GameManager.instance.unitDisplay.unit.LoadData(data);
 		GameManager.instance.unitDisplay.LoadUnit(GameManager.instance.unitDisplay.unit, GameManager.instance.unitDisplay.actionsVisible);
 	}
 

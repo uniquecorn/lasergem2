@@ -10,6 +10,7 @@ public class AttackButton : MonoBehaviour
 	public int position;
 	public Image icon;
 	public Text attackName;
+	public Button edit, delete;
 	// Use this for initialization
 	public void Use ()
 	{

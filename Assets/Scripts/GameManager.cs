@@ -27,11 +27,18 @@ public class GameManager : MonoBehaviour
 	}
 	public GameState state;
 
+	public enum GameMode
+	{
+		GAME,
+		EDITOR
+	}
+	public GameMode mode;
+
 	public Player[] players;
 	public int currentPlayer;
 	public Text turnDisplay;
 
-	public TileObject selectedObject;
+	public static TileObject selectedObject;
 
 	public static GameManager instance;
 	// SINGLETONS
@@ -214,6 +221,18 @@ public class GameManager : MonoBehaviour
 		{
 			gameUI.alpha = Mathf.Lerp(gameUI.alpha, 1, Time.deltaTime * 10);
 			initMap.alpha = Mathf.Lerp(initMap.alpha, 0, Time.deltaTime * 10);
+		}
+		if(Input.GetKeyDown("`"))
+		{
+			if(mode == GameMode.EDITOR)
+			{
+				mode = GameMode.GAME;
+			}
+			else
+			{
+				mode = GameMode.EDITOR;
+			}
+			unitDisplay.SetMode();
 		}
 	}
 }

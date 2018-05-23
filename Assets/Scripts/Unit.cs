@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using Castle;
 using Sigtrap.Relays;
+using MoonSharp.Interpreter;
 
+[MoonSharpUserData]
 public class Unit : TileObject
 {
 	public SpriteRenderer sr;
@@ -29,6 +31,7 @@ public class Unit : TileObject
 	public Facing facing;
 
 	public UnitData data;
+	public int damage;
 
 	public int movementUsed;
 	public bool moving;
@@ -56,11 +59,38 @@ public class Unit : TileObject
 	public Color moveColor;
 	public Color attackColor;
 
+	Script luaScript;
+	public bool luaLoaded;
 	// Use this for initialization
 	void Start ()
 	{
 		ResetUnit();
-		GameManager.instance.endTurn.AddListener(OnTurnStart);
+		GameManager.instance.endTurn.AddListener(OnTurn);
+	}
+
+	public void LoadData(UnitData _data)
+	{
+		data = _data;
+		if (data.lua != "" && !string.IsNullOrEmpty(data.lua))
+		{
+			LoadLua(data.lua);
+		}
+		else
+		{
+			luaScript = null;
+			luaLoaded = false;
+		}
+		ResetUnit();
+	}
+
+	public void LoadLua(string luaPath)
+	{
+		UserData.RegisterAssembly();
+		print(SaveManager.GetPath() + "/" + luaPath);
+		string luaCode = System.IO.File.ReadAllText(SaveManager.GetPath() + luaPath);
+		luaScript = new Script();
+		luaScript.DoString(luaCode);
+		luaLoaded = true;
 	}
 
 	public void SetTile(Tile _tile)
@@ -98,6 +128,7 @@ public class Unit : TileObject
 	void ResetUnit()
 	{
 		health = data.maxHealth;
+		damage = data.damage;
 		prevTile = tile;
 		sr.color = GameManager.instance.players[player].unitColor;
 		if (GameManager.instance.currentPlayer == player)
@@ -111,28 +142,60 @@ public class Unit : TileObject
 		}
 	}
 
-	public void OnTurnStart()
+	public void OnTurn()
 	{
 		if (GameManager.instance.currentPlayer == player)
 		{
-			selector.gameObject.SetActive(true);
-			selector.color = Color.grey;
+			OnTurnStart();
+			
 		}
 		else
 		{
-			attackReticule.gameObject.SetActive(false);
-			selector.gameObject.SetActive(false);
+			OnTurnEnd();
+			
 		}
 		pathDisplay.hidden = true;
 		movementUsed = 0;
 		prevTile = tile;
+	}
+
+	public void OnTurnStart()
+	{
+		selector.gameObject.SetActive(true);
+		selector.color = Color.grey;
+
+		if (luaLoaded)
+		{
+			DynValue result = CallFunction("OnTurnStart", this);
+
+			if (result.Type == DataType.String)
+			{
+				Debug.Log(result.String);
+			}
+		}
+	}
+
+	public void OnTurnEnd()
+	{
+		attackReticule.gameObject.SetActive(false);
+		selector.gameObject.SetActive(false);
 		Attack();
+
+		if (luaLoaded)
+		{
+			DynValue result = CallFunction("OnTurnEnd", this);
+
+			if (result.Type == DataType.String)
+			{
+				Debug.Log(result.String);
+			}
+		}
 	}
 
 	public override void Select()
 	{
 		base.Select();
-		if (GameManager.instance.selectedObject == this)
+		if (GameManager.selectedObject == this)
 		{
 			
 			selector.color = GameManager.instance.players[player].unitColor;
@@ -149,7 +212,7 @@ public class Unit : TileObject
 
 	public override void Unselect()
 	{
-		GameManager.instance.selectedObject = null;
+		GameManager.selectedObject = null;
 		selector.color = Color.grey;
 		GameManager.instance.unitDisplay.Hide();
 		unitPhase = UnitPhase.IDLE;
@@ -218,9 +281,41 @@ public class Unit : TileObject
 	{
 		if(attackTarget)
 		{
-			attackTarget.Hurt(data.attacks[currentAttack].damageType, Mathf.FloorToInt(data.damage * data.attacks[currentAttack].damageScale));
+			attackTarget.Hurt(data.attacks[currentAttack].damageType, Mathf.FloorToInt(damage * data.attacks[currentAttack].damageScale));
 			attackTarget = null;
 			attackReticule.SetActive(false);
+		}
+	}
+
+	public void Hurt(Unit aggressor, int value)
+	{
+		health -= value;
+		if(health <= 0)
+		{
+			health = 0;
+			Die(aggressor);
+		}
+		if (luaLoaded)
+		{
+			DynValue result = CallFunction("OnHurt", this, aggressor, value);
+
+			if (result.Type == DataType.String)
+			{
+				Debug.Log(result.String);
+			}
+		}
+	}
+
+	public void Die(Unit aggressor)
+	{
+		if (luaLoaded)
+		{
+			DynValue result = CallFunction("OnDeath", this, aggressor);
+
+			if (result.Type == DataType.String)
+			{
+				Debug.Log(result.String);
+			}
 		}
 	}
 
@@ -503,7 +598,12 @@ public class Unit : TileObject
 			}
 		}
 	}
+	public DynValue CallFunction(string functionName, params object[] args)
+	{
+		object func = luaScript.Globals[functionName];
 
+		return luaScript.Call(func, args);
+	}
 	// Update is called once per frame
 	void Update ()
 	{

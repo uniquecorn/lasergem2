@@ -7,6 +7,8 @@ public class UnitDisplay : MonoBehaviour
 {
 	public RectTransform displayTransform;
 
+	public RectTransform unitsScroll;
+
 	public RectTransform actions;
 	public RectTransform addAttack;
 	public List<AttackButton> attacks;
@@ -18,6 +20,7 @@ public class UnitDisplay : MonoBehaviour
 	public Image border;
 	public InputField nameInput,health,damage,movement;
 	public Button moveButton;
+	public Button saveButton;
 
 	public Sprite[] unitSprites;
 
@@ -29,12 +32,38 @@ public class UnitDisplay : MonoBehaviour
 		attacks = new List<AttackButton>();
 	}
 
+	public void SetMode()
+	{
+		if(GameManager.instance.mode == GameManager.GameMode.EDITOR)
+		{
+			nameInput.interactable = health.interactable = damage.interactable = movement.interactable = false;
+			addAttack.gameObject.SetActive(false);
+			saveButton.gameObject.SetActive(false);
+			for(int i = 0; i < attacks.Count; i++)
+			{
+				attacks[i].edit.gameObject.SetActive(false);
+				attacks[i].delete.gameObject.SetActive(false);
+			}
+		}
+		else
+		{
+			nameInput.interactable = health.interactable = damage.interactable = movement.interactable = false;
+			addAttack.gameObject.SetActive(false);
+			saveButton.gameObject.SetActive(false);
+			for (int i = 0; i < attacks.Count; i++)
+			{
+				attacks[i].edit.gameObject.SetActive(false);
+				attacks[i].delete.gameObject.SetActive(false);
+			}
+		}
+	}
+
 	public void LoadUnit(Unit _unit,bool _actionsVisible = false)
 	{
 		unit = _unit;
 		nameInput.text = unit.data.name;
 		health.text = unit.health.ToString();
-		damage.text = unit.data.damage.ToString();
+		damage.text = unit.damage.ToString();
 		movement.text = unit.data.movementRange.ToString();
 		icon.sprite = unit.sr.sprite = GameManager.instance.unitSprites[unit.data.spriteIndex];
 		border.color = GameManager.instance.players[unit.player].unitColor;
@@ -67,6 +96,7 @@ public class UnitDisplay : MonoBehaviour
 				attacks[i].gameObject.SetActive(false);
 			}
 		}
+		SetMode();
 	}
 
 	public void InitAttack(int pos)
@@ -179,7 +209,15 @@ public class UnitDisplay : MonoBehaviour
 	// Update is called once per frame
 	void Update ()
 	{
-		if(visible)
+		if (GameManager.instance.mode == GameManager.GameMode.EDITOR)
+		{
+			unitsScroll.anchoredPosition = new Vector2(0, -35);
+		}
+		else
+		{
+			unitsScroll.anchoredPosition = new Vector2(80, -35);
+		}
+		if (visible)
 		{
 			displayTransform.anchoredPosition = Vector2.Lerp(displayTransform.anchoredPosition, Vector2.zero, Time.deltaTime * 8);
 		}
