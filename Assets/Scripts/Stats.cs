@@ -7,4 +7,10 @@ public class Stats
 		RANGED,
 		FIRE
 	}
+	public enum BuildType
+	{
+		UNIT,
+		BUILDING,
+		SHRINE
+	}
 }

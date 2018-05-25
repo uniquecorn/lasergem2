@@ -7,4 +7,5 @@ public class Player
 {
 	public List<Unit> units;
 	public Color unitColor;
+	public int[,] visionData;
 }

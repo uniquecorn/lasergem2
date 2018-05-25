@@ -4,7 +4,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using Castle;
 using Sigtrap.Relays;
+using MoonSharp.Interpreter;
 
+[MoonSharpUserData]
 public class GameManager : MonoBehaviour
 {
 	public static int MAP_WIDTH, MAP_HEIGHT;
@@ -101,6 +103,7 @@ public class GameManager : MonoBehaviour
 		initMap.interactable = false;
 		initMap.blocksRaycasts = false;
 		state = GameState.IDLE;
+		
 		CreateMap(MAP_WIDTH, MAP_HEIGHT);
 		cameraManager.Snap((float)(MAP_WIDTH - 1) / 2, (float)(MAP_HEIGHT - 1) / 2);
 	}
@@ -110,6 +113,7 @@ public class GameManager : MonoBehaviour
 		MAP_WIDTH = width;
 		MAP_HEIGHT = height;
 		map = new Tile[width, height];
+		SetUpPlayers();
 		for(int x = 0; x < width; x++)
 		{
 			for (int y = 0; y < height; y++)
@@ -124,6 +128,14 @@ public class GameManager : MonoBehaviour
 		}
 		
 		Pathfinding.Init();
+	}
+
+	public void SetUpPlayers()
+	{
+		for (int i = 0; i < players.Length; i++)
+		{
+			players[i].visionData = new int[MAP_WIDTH, MAP_HEIGHT];
+		}
 	}
 
 	public void CreateTile(int _x, int _y)
@@ -174,6 +186,7 @@ public class GameManager : MonoBehaviour
 
 	public void EndTurn()
 	{
+		//SaveVision();
 		if(selectedObject)
 		{
 			selectedObject.Unselect();
@@ -183,8 +196,31 @@ public class GameManager : MonoBehaviour
 		{
 			currentPlayer = 0;
 		}
+		//LoadVision();
 		turnDisplay.text = "PLAYER " + CastleTools.NumberWords(currentPlayer + 1);
 		endTurn.Dispatch();
+	}
+
+	public void LoadVision()
+	{
+		for (int i = 0; i < MAP_WIDTH; i++)
+		{
+			for (int j = 0; j < MAP_HEIGHT; j++)
+			{
+				map[i, j].SetVisibility(players[currentPlayer].visionData[i, j],true);
+			}
+		}
+	}
+
+	public void SaveVision()
+	{
+		for (int i = 0; i < MAP_WIDTH; i++)
+		{
+			for (int j = 0; j < MAP_HEIGHT; j++)
+			{
+				players[currentPlayer].visionData[i, j] = map[i, j].visibility;
+			}
+		}
 	}
 
 	public Tile GetTile(Pathfinding.PathNode pathNode)

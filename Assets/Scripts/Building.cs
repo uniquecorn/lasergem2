@@ -4,14 +4,24 @@ using UnityEngine;
 
 public class Building : TileObject
 {
+	public SpriteRenderer sr;
+
+	public BuildingData buildingData;
+
 	public override void Select()
 	{
 		base.Select();
 		if(GameManager.selectedObject == this)
 		{
-
+			ShowBuildOptions();
 		}
 	}
+
+	void ShowBuildOptions()
+	{
+
+	}
+
 	// Use this for initialization
 	void Start ()
 	{
@@ -19,7 +29,8 @@ public class Building : TileObject
 	}
 	
 	// Update is called once per frame
-	void Update () {
+	void Update ()
+	{
 		
 	}
 }

@@ -18,17 +18,7 @@ public class Unit : TileObject
 		FACING,
 		ATTACK
 	}
-
 	public UnitPhase unitPhase;
-
-	public enum Facing
-	{
-		UP,
-		DOWN,
-		LEFT,
-		RIGHT
-	}
-	public Facing facing;
 
 	public UnitData data;
 	public int damage;
@@ -45,7 +35,6 @@ public class Unit : TileObject
 	private Tile[] moveRangeTiles;
 	private List<Tile> attackRangeTiles;
 	private Tile moveTile;
-	private Tile faceTile;
 	private List<Tile> faceTiles;
 	private List<Tile> coneTiles;
 
@@ -86,9 +75,10 @@ public class Unit : TileObject
 	public void LoadLua(string luaPath)
 	{
 		UserData.RegisterAssembly();
-		print(SaveManager.GetPath() + "/" + luaPath);
 		string luaCode = System.IO.File.ReadAllText(SaveManager.GetPath() + luaPath);
 		luaScript = new Script();
+		luaScript.Globals["GameManager"] = typeof(GameManager);
+		luaScript.Globals["currUnit"] = this;
 		luaScript.DoString(luaCode);
 		luaLoaded = true;
 	}
@@ -102,6 +92,7 @@ public class Unit : TileObject
 		tile = _tile;
 		tile.occupant = this;
 		transform.position = new Vector3(tile.x, tile.y, -0.1f);
+		//tile.GrowVisibility(data.vision);
 	}
 
 	public void SetFacing(Facing _face)
@@ -281,13 +272,13 @@ public class Unit : TileObject
 	{
 		if(attackTarget)
 		{
-			attackTarget.Hurt(data.attacks[currentAttack].damageType, Mathf.FloorToInt(damage * data.attacks[currentAttack].damageScale));
+			attackTarget.Hurt(this, data.attacks[currentAttack].damageType, Mathf.FloorToInt(damage * data.attacks[currentAttack].damageScale));
 			attackTarget = null;
 			attackReticule.SetActive(false);
 		}
 	}
 
-	public void Hurt(Unit aggressor, int value)
+	public void Hurt(Unit aggressor, Stats.DamageType damageType, int value)
 	{
 		health -= value;
 		if(health <= 0)
@@ -297,7 +288,7 @@ public class Unit : TileObject
 		}
 		if (luaLoaded)
 		{
-			DynValue result = CallFunction("OnHurt", this, aggressor, value);
+			DynValue result = CallFunction("OnHurt", this, aggressor, damageType, value);
 
 			if (result.Type == DataType.String)
 			{
@@ -360,7 +351,6 @@ public class Unit : TileObject
 			attackRangeTiles.Add(GameManager.instance.GetTile(rPathfinding.path[i]));
 		}
 		rPathfinding.CreateRangedMap(_tile, minAttackRange, true);
-		print(attackRangeTiles.Count);
 		for (int i = attackRangeTiles.Count - 1; i >= 0; i--)
 		{
 			bool removed = false;
