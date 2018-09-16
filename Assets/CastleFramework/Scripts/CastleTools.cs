@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
@@ -11,7 +12,6 @@ using System.Linq;
 public class CastleTools : MonoBehaviour
 {
 	public static string[] letters = new string[] { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
-	public static string[] numbers = new string[] { "ZERO", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE", "TEN", "ELEVEN", "TWELVE", "THIRTEEN", "FOURTEEN", "FIFTEEN", "SIXTEEN", "SEVENTEEN", "EIGHTEEN", "NINETEEN", "TWENTY"};
 	public static T RandomObject<T>(T[] assets)
 	{
 		return assets[Random.Range(0, assets.Length)];
@@ -21,21 +21,51 @@ public class CastleTools : MonoBehaviour
 		return Instantiate(RandomObject(assets), Vector3.zero, Quaternion.identity);
 	}
 
-	public static Sprite LoadPNG(string fileName)
+	public static IEnumerator LoadImageIOS(string fileName, System.Action<Texture2D> result)
 	{
-		using (FileStream imageFile = File.OpenRead(fileName))
+		WWW imageToLoadPath = new WWW(fileName);
+		float elapsedTime = 0.0f;
+		while (!imageToLoadPath.isDone)
 		{
-			return LoadPNG(imageFile);
+			elapsedTime += Time.deltaTime;
+			if (elapsedTime >= 10.0f) break;
+			yield return null;
+		}
+
+		if (!imageToLoadPath.isDone || !string.IsNullOrEmpty(imageToLoadPath.error))
+		{
+			result(null);
+			yield break;
+		}
+		result(imageToLoadPath.texture);
+	}
+
+	public static Texture2D LoadImage(string fileName)
+	{
+		if(fileName.EndsWith(".png"))
+		{
+			return LoadPNG(File.ReadAllBytes(fileName));
+		}
+		else if(fileName.EndsWith(".tga"))
+		{
+			return LoadTGA(fileName);
+		}
+		else
+		{
+			throw new System.Exception("Not a png or tga file");
 		}
 	}
 
-	public static Sprite LoadPNG(Stream fs)
+	public static Texture2D LoadPNG(byte[] imageData)
 	{
-		byte[] imageData = new byte[fs.Length];
-		fs.Read(imageData, 0, (int)fs.Length);
-		Texture2D tex = new Texture2D(210, 315);
+		Texture2D tex = new Texture2D(4, 4, TextureFormat.ARGB32, true)
+		{
+			filterMode = FilterMode.Bilinear,
+			wrapMode = TextureWrapMode.Clamp
+		};
 		tex.LoadImage(imageData);
-		return Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), Vector2.one / 2,320);
+		tex.Apply();
+		return tex;
 	}
 
 	public static Texture2D LoadTGA(string fileName)
@@ -289,10 +319,6 @@ public class CastleTools : MonoBehaviour
 	{
 		int i = Random.Range(0, 26);
 		return letters[i];
-	}
-	public static string NumberWords(int i)
-	{
-		return numbers[i];
 	}
 	public static bool ValidateText(string text)
 	{

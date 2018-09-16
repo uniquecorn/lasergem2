@@ -90,7 +90,6 @@
 
 			if (EventSystem.current.IsPointerOverGameObject(-1))    // is the touch on the GUI
 			{
-				Debug.Log("BLOCK");
 				return;
 			}
 			Hover(focusedObject);

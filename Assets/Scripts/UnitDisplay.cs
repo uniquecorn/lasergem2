@@ -112,7 +112,7 @@ public class UnitDisplay : MonoBehaviour
 		}
 		attacks[pos].editorTransform.anchoredPosition = new Vector2(0, 60 + (pos * 30));
 		attacks[pos].editorTransform.anchoredPosition = new Vector2(0, 60 + (pos * 30));
-		attacks[pos].attackName.text = _attack.name;
+		attacks[pos].attackName.text = _attack.actionName;
 		attacks[pos].icon.sprite = StyleSheet.instance.GetStyle(_attack.damageType).icon;
 		attacks[pos].position = pos;
 	}

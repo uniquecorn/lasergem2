@@ -53,7 +53,7 @@ public class AttackEditor : MonoBehaviour
 	}
 	public void SetName(string value)
 	{
-		attack.name = value;
+		attack.actionName = value;
 		Save();
 	}
 	public void SetDamage(string value)
@@ -104,7 +104,7 @@ public class AttackEditor : MonoBehaviour
 	{
 		aoeRange.gameObject.SetActive(false);
 		attack = _attack;
-		nameInput.text = _attack.name;
+		nameInput.text = _attack.actionName;
 		damageScale.text = _attack.damageScale.ToString();
 		dmgTypeDrop.value = (int)_attack.damageType;
 		minRange.text = _attack.minRange.ToString();
