@@ -55,7 +55,6 @@ public class GameManager : MonoBehaviour
 
 	public Relay endTurn;
 
-	public List<UnitData> unitsSaved;
 	private List<UnitLoader> unitLoaders;
 
 	private void Awake()

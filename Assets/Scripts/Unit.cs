@@ -20,7 +20,7 @@ public class Unit : TileObject
 	}
 	public UnitPhase unitPhase;
 
-	public UnitData data;
+	public GameUnit data;
 	public int damage;
 
 	public int movementUsed;
@@ -57,12 +57,12 @@ public class Unit : TileObject
 		GameManager.instance.endTurn.AddListener(OnTurn);
 	}
 
-	public void LoadData(UnitData _data)
+	public void LoadData(GameUnit _data)
 	{
 		data = _data;
-		if (data.lua != "" && !string.IsNullOrEmpty(data.lua))
+		if (data.luaPath != "" && !string.IsNullOrEmpty(data.luaPath))
 		{
-			LoadLua(data.lua);
+			LoadLua(data.luaPath);
 		}
 		else
 		{

@@ -12,9 +12,15 @@ using System.Linq;
 public class CastleTools : MonoBehaviour
 {
 	public static string[] letters = new string[] { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
+	public static string[] numbers = new string[] { "ZERO", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE", "TEN", "ELEVEN", "TWELVE", "THIRTEEN", "FOURTEEN", "FIFTEEN", "SIXTEEN", "SEVENTEEN", "EIGHTEEN", "NINETEEN", "TWENTY"};
+	
 	public static T RandomObject<T>(T[] assets)
 	{
 		return assets[Random.Range(0, assets.Length)];
+	}
+	public static string NumberWords(int i)
+	{
+		return numbers[i];
 	}
 	public static GameObject InstantiateRandom(GameObject[] assets)
 	{
