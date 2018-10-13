@@ -15,7 +15,7 @@ public class ActionManager : MonoBehaviour
 
 	public void LoadLua()
 	{
-		string luaCode = System.IO.File.ReadAllText(SaveManager.GetPath() + luaPath);
+		string luaCode = System.IO.File.ReadAllText(SaveManager.GetCurrentPath() + luaPath);
 		luaScript = new Script();
 		luaScript.Globals["GameManager"] = typeof(GameManager);
 		luaScript.DoString(luaCode);

@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public class UnitLoader : MonoBehaviour
 {
-	public UnitData data;
+	public GameUnit data;
 	public Image icon;
 	public Text dataName;
 
@@ -17,10 +17,10 @@ public class UnitLoader : MonoBehaviour
 		GameManager.instance.unitDisplay.LoadUnit(GameManager.instance.unitDisplay.unit, GameManager.instance.unitDisplay.actionsVisible);
 	}
 
-	public void LoadData(UnitData _data)
+	public void LoadData(GameUnit _data)
 	{
 		data = _data;
-		icon.sprite = GameManager.instance.unitSprites[data.spriteIndex];
+		icon.sprite = GameManager.instance.unitSprites[0];
 		dataName.text = data.name;
 	}
 
@@ -33,6 +33,6 @@ public class UnitLoader : MonoBehaviour
 		path = Application.persistentDataPath + "/Units/" + data.name;
 #endif
 		File.WriteAllText(path, jsonData);
-		GameManager.instance.LoadSavedUnits();
+		//GameManager.instance.LoadSavedUnits();
 	}
 }

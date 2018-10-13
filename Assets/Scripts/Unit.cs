@@ -75,7 +75,7 @@ public class Unit : TileObject
 	public void LoadLua(string luaPath)
 	{
 		UserData.RegisterAssembly();
-		string luaCode = System.IO.File.ReadAllText(SaveManager.GetPath() + luaPath);
+		string luaCode = System.IO.File.ReadAllText(SaveManager.GetCurrentPath() + luaPath);
 		luaScript = new Script();
 		luaScript.Globals["GameManager"] = typeof(GameManager);
 		luaScript.Globals["currUnit"] = this;
@@ -170,7 +170,6 @@ public class Unit : TileObject
 	{
 		attackReticule.gameObject.SetActive(false);
 		selector.gameObject.SetActive(false);
-		Attack();
 
 		if (luaLoaded)
 		{
@@ -241,8 +240,8 @@ public class Unit : TileObject
 	{
 		attackTarget = null;
 		attackReticule.gameObject.SetActive(false);
-		minAttackRange = data.attacks[attack].minRange;
-		maxAttackRange = data.attacks[attack].maxRange;
+		minAttackRange = data.actions[attack].minRange;
+		maxAttackRange = data.actions[attack].maxRange;
 		currentAttack = attack;
 		faceTiles = new List<Tile>();
 		int _x = tile.x;
@@ -266,16 +265,6 @@ public class Unit : TileObject
 		unitPhase = UnitPhase.ATTACK;
 		GameManager.instance.state = GameManager.GameState.DISABLESELECTING;
 		GetAttackTiles(tile,false);
-	}
-
-	void Attack()
-	{
-		if(attackTarget)
-		{
-			attackTarget.Hurt(this, data.attacks[currentAttack].damageType, Mathf.FloorToInt(damage * data.attacks[currentAttack].damageScale));
-			attackTarget = null;
-			attackReticule.SetActive(false);
-		}
 	}
 
 	public void Hurt(Unit aggressor, Stats.DamageType damageType, int value)

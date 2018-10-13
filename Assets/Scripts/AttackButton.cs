@@ -27,7 +27,6 @@ public class AttackButton : MonoBehaviour
 		{
 			return;
 		}
-		unitDisplay.unit.data.attacks.RemoveAt(position);
 		gameObject.SetActive(false);
 		unitDisplay.LoadUnit(unitDisplay.unit, true);
 	}
@@ -39,6 +38,5 @@ public class AttackButton : MonoBehaviour
 			return;
 		}
 		unitDisplay.attackEditor.position = position;
-		unitDisplay.attackEditor.LoadAttack(unitDisplay.unit.data.attacks[position]);
 	}
 }

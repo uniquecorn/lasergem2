@@ -121,7 +121,6 @@ public class AttackEditor : MonoBehaviour
 
 	public void Save()
 	{
-		unitDisplay.unit.data.attacks[position] = attack;
 		unitDisplay.LoadUnit(unitDisplay.unit,true);
 	}
 

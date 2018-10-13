@@ -56,6 +56,7 @@ public class GameManager : MonoBehaviour
 	public Relay endTurn;
 
 	private List<UnitLoader> unitLoaders;
+	public ModLoader modLoader;
 
 	private void Awake()
 	{
@@ -65,15 +66,7 @@ public class GameManager : MonoBehaviour
 	// Use this for initialization
 	void Start ()
 	{
-		endTurn = new Relay();
-		CastleManager.Init();
-		SetWidth(5);
-		SetHeight(5);
-		SetUnits(1);
-		gameUI.alpha = 0;
-		initMap.alpha = 1;
-		unitLoaders = new List<UnitLoader>();
-		LoadSavedUnits();
+		modLoader.Init();
 		//CastleManager.showLog = true;
 		//CreateMap(5, 5);
 		//cameraManager.Snap(2f, 2f);
@@ -227,24 +220,24 @@ public class GameManager : MonoBehaviour
 		return GetTile(pathNode.x, pathNode.y);
 	}
 
-	public void LoadSavedUnits()
+	public void LoadMods()
 	{
 		for(int i = unitLoaders.Count - 1; i >= 0; i--)
 		{
 			Destroy(unitLoaders[i].gameObject);
 			unitLoaders.RemoveAt(i);
 		}
-		unitsSaved = SaveManager.LoadAll();
-		if(unitsSaved.Count > 0)
+		List<Game> mods = SaveManager.GetMods();
+		if(mods != null && mods.Count > 0)
 		{
-			for(int i = 0; i < unitsSaved.Count; i++)
+			for(int i = 0; i < mods.Count; i++)
 			{
-				UnitLoader loader = Instantiate(unitDataLoaderPrefab, unitLoaderTransform).GetComponent<UnitLoader>();
-				loader.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, -5 - (i * 60));
-				loader.LoadData(unitsSaved[i]);
-				unitLoaders.Add(loader);
+				//UnitLoader loader = Instantiate(unitDataLoaderPrefab, unitLoaderTransform).GetComponent<UnitLoader>();
+				//loader.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, -5 - (i * 60));
+				//loader.LoadData(mods[i]);
+				//unitLoaders.Add(loader);
 			}
-			unitLoaderTransform.sizeDelta = new Vector2(unitLoaderTransform.sizeDelta.x, 10 + (unitsSaved.Count * 60));
+			//unitLoaderTransform.sizeDelta = new Vector2(unitLoaderTransform.sizeDelta.x, 10 + (mods.Count * 60));
 		}
 	}
 

@@ -65,7 +65,7 @@ public class UnitDisplay : MonoBehaviour
 		health.text = unit.health.ToString();
 		damage.text = unit.damage.ToString();
 		movement.text = unit.data.movementRange.ToString();
-		icon.sprite = unit.sr.sprite = GameManager.instance.unitSprites[unit.data.spriteIndex];
+		icon.sprite = unit.sr.sprite = GameManager.instance.unitSprites[0];
 		border.color = GameManager.instance.players[unit.player].unitColor;
 		visible = true;
 		actionsVisible = _actionsVisible;
@@ -79,15 +79,7 @@ public class UnitDisplay : MonoBehaviour
 		}
 		if(_actionsVisible)
 		{
-			if (unit.data.attacks == null)
-			{
-				unit.data.attacks = new List<Attack>();
-			}
-			for (int i = 0; i < unit.data.attacks.Count; i++)
-			{
-				InitAttack(i);
-			}
-			addAttack.anchoredPosition = new Vector2(0, 60 + (unit.data.attacks.Count * 30));
+			addAttack.anchoredPosition = new Vector2(0, 60 + (unit.data.actions.Length * 30));
 		}
 		else
 		{
@@ -101,20 +93,7 @@ public class UnitDisplay : MonoBehaviour
 
 	public void InitAttack(int pos)
 	{
-		Attack _attack = unit.data.attacks[pos];
-		if(pos < attacks.Count)
-		{
-			attacks[pos].gameObject.SetActive(true);
-		}
-		else
-		{
-			CreateAttackButton(pos);
-		}
-		attacks[pos].editorTransform.anchoredPosition = new Vector2(0, 60 + (pos * 30));
-		attacks[pos].editorTransform.anchoredPosition = new Vector2(0, 60 + (pos * 30));
-		attacks[pos].attackName.text = _attack.actionName;
-		attacks[pos].icon.sprite = StyleSheet.instance.GetStyle(_attack.damageType).icon;
-		attacks[pos].position = pos;
+
 	}
 
 	public AttackButton CreateAttackButton(int pos)
@@ -132,10 +111,7 @@ public class UnitDisplay : MonoBehaviour
 		{
 			return;
 		}
-		attackEditor.position = unit.data.attacks.Count;
-		attackEditor.shown = true;
-		unit.data.attacks.Add(new Attack());
-		attackEditor.Init();
+
 	}
 
 	public void Hide()
@@ -155,13 +131,13 @@ public class UnitDisplay : MonoBehaviour
 		{
 			return;
 		}
-		int index = unit.data.spriteIndex + 1;
-		if(index >= GameManager.instance.unitSprites.Length)
-		{
-			index = 0;
-		}
-		unit.data.spriteIndex = index;
-		unit.sr.sprite = icon.sprite = GameManager.instance.unitSprites[index];
+		//int index = unit.data.spriteIndex + 1;
+		//if(index >= GameManager.instance.unitSprites.Length)
+		//{
+		//	index = 0;
+		//}
+		//unit.data.spriteIndex = index;
+		//unit.sr.sprite = icon.sprite = GameManager.instance.unitSprites[index];
 	}
 	public void SetName(string value)
 	{
@@ -202,8 +178,8 @@ public class UnitDisplay : MonoBehaviour
 
 	public void Save()
 	{
-		SaveManager.Save(unit.data);
-		GameManager.instance.LoadSavedUnits();
+		//SaveManager.Save(unit.data);
+		//GameManager.instance.LoadSavedUnits();
 	}
 
 	// Update is called once per frame

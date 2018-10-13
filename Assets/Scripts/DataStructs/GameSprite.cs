@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
 [System.Serializable]
@@ -26,7 +26,7 @@ public class GameSprite
 	{
 		public float x, y, width, height;
 		[System.NonSerialized]
-		public Sprite animSprite;
+		public Sprite sprite;
 		public SpriteBounds(float _x, float _y, float _width, float _height)
 		{
 			x = _x;
@@ -40,14 +40,14 @@ public class GameSprite
 		}
 		public void Init(Texture2D tex)
 		{
-			animSprite = Sprite.Create(tex, GetRect(), Vector2.one/2, 250);
+			sprite = Sprite.Create(tex, GetRect(), Vector2.one/2, 250);
 		}
 	}
 	public void Init()
 	{
 		Texture2D artTex = null;
-		string artDir = System.IO.Path.Combine(SaveManager.GetPath(), spritePath);
-		artTex = CastleTools.LoadImage(artDir);
+		
+		artTex = CastleTools.LoadImage(GetArtPath());
 		if(art == null || art.Length == 0)
 		{
 			art = new SpriteBounds[1]
@@ -59,5 +59,9 @@ public class GameSprite
 		{
 			art[i].Init(artTex);
 		}
+	}
+	public string GetArtPath()
+	{
+		return Path.Combine(SaveManager.GetCurrentPath(), spritePath);
 	}
 }
